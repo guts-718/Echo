@@ -106,7 +106,8 @@ export const logout = async (req, res) => {
 
 export const getME = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.user._id }); // need to attach user._id to req.. middleware needed
+    const user = await User.findById(req.user._id).select("-password"); // need to attach user._id to req.. middleware needed
+    res.status(200).json(user);
   } catch (error) {
     console.log("could not get current user ", error);
     res.status(500).json({ success: false, error: error });
