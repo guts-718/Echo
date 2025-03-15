@@ -5,8 +5,11 @@ import authRoutes from "./routes/auth.routes.js";
 import { connectDB } from "./utils/db.js";
 dotenv.config();
 const app = express();
+
+// very important
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // parses incoming body
+app.use(express.urlencoded({ extended: true })); // to parse form data urlencoded
 
 app.use("/api/auth", authRoutes);
 app.get("/", (req, res) => {

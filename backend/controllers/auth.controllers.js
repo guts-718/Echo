@@ -1,17 +1,81 @@
+import User from "../models/user.model.js";
+import bcrypt from "bcryptjs";
+import { generateTokenAndSetCookie } from "../utils/generateToken.js";
+
 export const login = async (req, res) => {
-  res
-    .status(200)
-    .json({ success: true, message: "you hit the login endpoint" });
+  try {
+  } catch (error) {
+    res.status(400).json({ success: false, message: "could not login", error });
+  }
 };
 
 export const signup = async (req, res) => {
-  res
-    .status(200)
-    .json({ success: true, message: "you hit the signup endpoint" });
+  try {
+    const { email, username, fullName, password } = req.body;
+    if (!email || !password || !fullName || !username) {
+      return res
+        .status(400)
+        .json({ success: false, message: "fill all the necessary fields" });
+    }
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "password should be more than 6 characters long" });
+    }
+    const emailRegex = /^[^@]+@[^@]+.[^@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "invalid email format" });
+    }
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: "username already exists" });
+    }
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ error: "email already exists" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newUser = new User({
+      fullName,
+      email,
+      username,
+      password: hashedPassword,
+    });
+    if (newUser) {
+      generateTokenAndSetCookie(newUser._id, res);
+      await newUser.save();
+      res.status(200).json({
+        _id: newUser._id,
+        fullName: newUser.fullName,
+        username: newUser.username,
+        email: newUser.email,
+        followers: newUser.followers,
+        following: newUser.following,
+        profileImage: newUser.profileImage,
+        coverImage: newUser.coverImage,
+      });
+    } else {
+      console.log("server error");
+      res
+        .status(500)
+        .json({ success: false, error: "server error could not sign up" });
+    }
+    await newUser.save();
+  } catch (error) {
+    console.log(error);
+    res
+      .status(400)
+      .json({ success: false, message: "could not signup", error: error });
+  }
 };
 
 export const logout = async (req, res) => {
-  res
-    .status(200)
-    .json({ success: true, message: "you hit the logout endpoint" });
+  try {
+  } catch (error) {
+    res
+      .status(400)
+      .json({ success: false, message: "could not logout", error: error });
+  }
 };
