@@ -3,10 +3,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import { connectDB } from "./utils/db.js";
+import cookieParser from "cookie-parser";
 dotenv.config();
 const app = express();
 
 // very important
+app.use(cookieParser());
 app.use(cors());
 app.use(express.json()); // parses incoming body
 app.use(express.urlencoded({ extended: true })); // to parse form data urlencoded

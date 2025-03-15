@@ -4,7 +4,28 @@ import { generateTokenAndSetCookie } from "../utils/generateToken.js";
 
 export const login = async (req, res) => {
   try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    const pass = user?.password || "";
+    const isPasswordCorrect = await bcrypt.compare(password, pass); // yaha await nhi diye to even wrong password pr login ho ja rha tha...
+
+    if (!user || !isPasswordCorrect) {
+      console.log("invalid credentials for login");
+      return res.status(400).json({ error: "invalid username or password" });
+    }
+    generateTokenAndSetCookie(user._id, res);
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      username: user.username,
+      email: user.email,
+      followers: user.followers,
+      following: user.following,
+      profileImage: user.profileImage,
+      coverImage: user.coverImage,
+    });
   } catch (error) {
+    console.log("Error while logging in ", error);
     res.status(400).json({ success: false, message: "could not login", error });
   }
 };
@@ -64,7 +85,7 @@ export const signup = async (req, res) => {
     }
     await newUser.save();
   } catch (error) {
-    console.log(error);
+    console.log("Error while signing up", error);
     res
       .status(400)
       .json({ success: false, message: "could not signup", error: error });
@@ -73,9 +94,21 @@ export const signup = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    res.status(200).json({ message: "logged out successfully" });
   } catch (error) {
+    console.log("error in logging out ", error);
     res
       .status(400)
       .json({ success: false, message: "could not logout", error: error });
+  }
+};
+
+export const getME = async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user._id }); // need to attach user._id to req.. middleware needed
+  } catch (error) {
+    console.log("could not get current user ", error);
+    res.status(500).json({ success: false, error: error });
   }
 };
