@@ -76,24 +76,40 @@ export const followUnfollowUser = async (req, res) => {
 export const getSuggestedUser = async (req, res) => {
   try {
     const userId = req.user._id;
+
+    // Get the list of users the current user follows
     const usersFollowed = await User.findById(userId).select("following");
+
+    // Fetch random users, excluding the current user
     const users = await User.aggregate([
       {
         $match: {
-          _id: { $ne: userId },
+          _id: { $ne: userId }, // Exclude the current user
         },
       },
-      { sample: { size: 10 } },
+      { $sample: { size: 10 } }, // Corrected: added "$" to sample
     ]);
 
+    // Check if usersFollowed exists to avoid errors
+    const followingIds =
+      usersFollowed?.following?.map((id) => id.toString()) || [];
+
+    // Filter users that are not followed
     const filteredUsers = users.filter(
-      (user) => !usersFollowed.following.includes(user._id)
+      (user) => !followingIds.includes(user._id.toString())
     );
+
+    // Limit the suggested users to 4
     const suggestedUsers = filteredUsers.slice(0, 4);
-    suggestedUsers.forEach((user) => (user.password = null));
+
+    // Remove password field before sending response
+    suggestedUsers.forEach((user) => {
+      user.password = undefined;
+    });
+
     res.status(200).json(suggestedUsers);
   } catch (error) {
-    console.log("error in suggested users ", error);
+    console.log("Error in suggested users:", error);
     res.status(500).json({ error: error.message });
   }
 };

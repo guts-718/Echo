@@ -20,7 +20,6 @@ export const createPost = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "atleast a text or a image needed",
-        error: error.message,
       });
     }
     if (image) {
@@ -145,6 +144,10 @@ export const likeUnlikePost = async (req, res) => {
       await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } });
       post.likes.pull(userId);
       await post.save();
+      const updatedLikes = post.likes.filter(
+        (id) => id.toString() !== userId.toString()
+      );
+      res.status(200).json(updatedLikes);
     } else {
       await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } });
       post.likes.push(userId);
@@ -156,6 +159,8 @@ export const likeUnlikePost = async (req, res) => {
           type: "like",
         });
         await notification.save();
+        const updatedLikes = posts.likes;
+        res.status(200).json(updatedLikes);
       }
     }
     console.log(`successfully ${isLiked ? "unliked" : "liked"} post`);
